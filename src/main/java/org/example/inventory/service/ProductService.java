@@ -3,6 +3,7 @@ package org.example.inventory.service;
 import org.example.inventory.model.Product;
 import org.example.inventory.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +30,10 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    @Transactional
     public Optional<Product> update(Long id, Product product) {
-        Optional<Product> existingProduct = productRepository.findById(id);
+        Optional<Product> existingProduct =
+                productRepository.findByIdForUpdate(id);
 
         if (existingProduct.isEmpty()) {
             return Optional.empty();
@@ -39,6 +42,7 @@ public class ProductService {
         Product existing = existingProduct.get();
         existing.setName(product.getName());
         existing.setQuantity(product.getQuantity());
+        existing.setPrice(product.getPrice());
 
         return Optional.of(productRepository.save(existing));
     }

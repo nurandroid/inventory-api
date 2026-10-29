@@ -1,5 +1,6 @@
 package org.example.inventory.controller;
 
+import jakarta.validation.Valid;
 import org.example.inventory.model.Product;
 import org.example.inventory.service.ProductService;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<Product> create(@RequestBody Product product) {
+    public ResponseEntity<Product> create(@Valid @RequestBody Product product) {
         Product savedProduct = productService.create(product);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -49,7 +50,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<Product> update(
             @PathVariable Long id,
-            @RequestBody Product product) {
+            @Valid @RequestBody Product product) {
 
         return productService.update(id, product)
                 .map(updatedProduct -> ResponseEntity.ok(updatedProduct))
