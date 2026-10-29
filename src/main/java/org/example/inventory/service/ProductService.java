@@ -30,12 +30,17 @@ public class ProductService {
     }
 
     public Optional<Product> update(Long id, Product product) {
-        if (!productRepository.existsById(id)) {
+        Optional<Product> existingProduct = productRepository.findById(id);
+
+        if (existingProduct.isEmpty()) {
             return Optional.empty();
         }
 
-        product.setId(id);
-        return Optional.of(productRepository.save(product));
+        Product existing = existingProduct.get();
+        existing.setName(product.getName());
+        existing.setQuantity(product.getQuantity());
+
+        return Optional.of(productRepository.save(existing));
     }
     public boolean deleteById(Long id) {
         if (!productRepository.existsById(id)) {
