@@ -38,6 +38,27 @@ import java.util.List;
 @Import(GlobalExceptionHandler.class)
 class OrderControllerTest {
 
+    @org.junit.jupiter.api.BeforeAll
+    static void configureJsonPath() {
+        com.jayway.jsonpath.Configuration.setDefaults(
+                new com.jayway.jsonpath.Configuration.Defaults() {
+                    @Override
+                    public com.jayway.jsonpath.spi.json.JsonProvider jsonProvider() {
+                        return new com.jayway.jsonpath.spi.json.Jackson3JsonProvider();
+                    }
+
+                    @Override
+                    public com.jayway.jsonpath.spi.mapper.MappingProvider mappingProvider() {
+                        return new com.jayway.jsonpath.spi.mapper.Jackson3MappingProvider();
+                    }
+
+                    @Override
+                    public java.util.Set<com.jayway.jsonpath.Option> options() {
+                        return java.util.EnumSet.noneOf(com.jayway.jsonpath.Option.class);
+                    }
+                }
+        );
+    }
     @Autowired
     private MockMvc mockMvc;
 
