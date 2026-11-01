@@ -11,21 +11,33 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 
 import java.math.BigDecimal;
+
+@Schema(description = "Товар каталога с ценой и складским остатком")
 
 @Entity
 @Table(name = "products")
 public class Product {
 
+    @Schema(
+            description = "ID товара, назначается базой данных",
+            example = "3",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Schema(description = "Название товара", example = "Mouse")
     @NotBlank(message = "Название товара не должно быть пустым")
     private String name;
+    @Schema(description = "Количество единиц товара на складе", example = "3")
     @PositiveOrZero(message = "Остаток товара не должен быть отрицательным")
     private int quantity;
+    @Schema(description = "Цена одной единицы товара", example = "24.90")
     @NotNull(message = "Цена товара обязательна")
     @DecimalMin(value = "0.00", inclusive = false,
             message = "Цена товара должна быть больше нуля")

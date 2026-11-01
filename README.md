@@ -134,6 +134,25 @@ $env:DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Local Pos
 `DB_PASSWORD` действует в текущем терминале.
 Файл `.env` используется Docker Compose и не загружается Maven автоматически.
 `DOCKER_DB_PASSWORD` задаёт пароль отдельной базы в Docker.
+
+## Документация API — Swagger UI и OpenAPI
+
+После запуска приложения доступны:
+
+- Swagger UI: http://localhost:8080/swagger-ui/index.html
+- OpenAPI в формате JSON: http://localhost:8080/v3/api-docs
+
+Swagger UI содержит описания операций с товарами и заказами,
+параметров, моделей данных и кодов ответов.
+
+Чтобы выполнить запрос, раскрой операцию, нажми Try it out,
+заполни параметры или тело запроса и нажми Execute.
+Фактический ответ приложения отображается в Server response.
+Example Value показывает пример из документации.
+
+Запросы POST, PUT и DELETE изменяют данные подключённой базы.
+Повторный POST может создать ещё один товар или заказ.
+
 ## Пример работы с API
 
 Команды выполняются в PowerShell при запущенном приложении.
