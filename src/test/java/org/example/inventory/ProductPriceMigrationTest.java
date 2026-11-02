@@ -140,6 +140,66 @@ class ProductPriceMigrationTest {
                 .contains("Product prices are missing or invalid"));
     }
 
+    @Test
+    void migrateV4_shouldPreserveExistingProducts() throws SQLException {
+        prepareOldProducts();
+        prepareApprovedPrices();
+        migrateTo("3");
+
+        migrateTo("4");
+
+        assertProductsAndPrices();
+    }
+
+    @Test
+    void migrateV4_shouldEnforceProductConstraints() throws SQLException {
+        migrateTo("4");
+
+        execute("""
+                INSERT INTO products (name, quantity, price)
+                VALUES (repeat('A', 255), 0, 0.01)
+                """);
+
+        assertRejectedProduct("NULL", "0", "1.00", "23502");
+        assertRejectedProduct("''", "0", "1.00", "23514");
+        assertRejectedProduct("'   '", "0", "1.00", "23514");
+        assertRejectedProduct("repeat('A', 256)", "0", "1.00", "22001");
+
+        assertRejectedProduct("'Mouse'", "-1", "1.00", "23514");
+        assertRejectedProduct("'Mouse'", "NULL", "1.00", "23502");
+
+        assertRejectedProduct("'Mouse'", "0", "0.00", "23514");
+        assertRejectedProduct("'Mouse'", "0", "-0.01", "23514");
+        assertRejectedProduct("'Mouse'", "0", "NULL", "23502");
+
+        try (var statement = connection.createStatement();
+             var result = statement.executeQuery(
+                     "SELECT COUNT(*) FROM products")) {
+            assertTrue(result.next());
+            assertEquals(1, result.getInt(1));
+        }
+    }
+
+    private void assertRejectedProduct(
+            String nameSql,
+            String quantitySql,
+            String priceSql,
+            String expectedSqlState) {
+
+        String sql = """
+                INSERT INTO products (name, quantity, price)
+                VALUES (%s, %s, %s)
+                """.formatted(nameSql, quantitySql, priceSql);
+
+        SQLException exception = assertThrows(
+                SQLException.class,
+                () -> execute(sql),
+                sql
+        );
+
+        assertEquals(expectedSqlState, exception.getSQLState(), sql);
+    }
+
     private void prepareOldProducts() throws SQLException {
         migrateTo("1");
 

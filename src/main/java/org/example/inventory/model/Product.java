@@ -11,6 +11,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
@@ -33,6 +34,7 @@ public class Product {
     private Long id;
     @Schema(description = "Название товара", example = "Mouse")
     @NotBlank(message = "Название товара не должно быть пустым")
+    @Size(max = 255, message = "Название товара не должно превышать 255 символов")
     private String name;
     @Schema(description = "Количество единиц товара на складе", example = "3")
     @PositiveOrZero(message = "Остаток товара не должен быть отрицательным")
