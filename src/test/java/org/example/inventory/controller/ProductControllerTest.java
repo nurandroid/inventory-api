@@ -60,8 +60,11 @@ class ProductControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json("""
                         {
-                          "name": "Название товара не должно превышать 255 символов"
-                        }
+                             "message": "Ошибка проверки данных",
+                             "errors": {
+                                 "name": "Название товара не должно превышать 255 символов"
+                             }
+                         }
                         """));
 
         verifyNoInteractions(productService);
@@ -92,8 +95,11 @@ class ProductControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json("""
                         {
-                          "name": "Название товара не должно превышать 255 символов"
-                        }
+                             "message": "Ошибка проверки данных",
+                             "errors": {
+                                 "name": "Название товара не должно превышать 255 символов"
+                             }
+                         }
                         """));
 
         verifyNoInteractions(productService);

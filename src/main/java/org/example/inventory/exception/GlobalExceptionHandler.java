@@ -14,7 +14,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidation(
+    public ResponseEntity<Map<String, Object>> handleValidation(
             MethodArgumentNotValidException exception) {
 
         Map<String, String> errors = new LinkedHashMap<>();
@@ -26,7 +26,11 @@ public class GlobalExceptionHandler {
                 )
         );
 
-        return ResponseEntity.badRequest().body(errors);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", "Ошибка проверки данных");
+        body.put("errors", errors);
+
+        return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(InsufficientStockException.class)

@@ -75,7 +75,7 @@ class OrderControllerTest {
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.items").value(
+                .andExpect(jsonPath("$.errors.items").value(
                         "Заказ должен содержать хотя бы одну позицию"
                 ));
 
@@ -97,7 +97,7 @@ class OrderControllerTest {
                             }
                             """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['items[0].quantity']").value(
+                .andExpect(jsonPath("$.errors['items[0].quantity']").value(
                         "Количество товара должно быть больше нуля"
                 ));
 
@@ -290,7 +290,7 @@ class OrderControllerTest {
                             }
                             """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['items[0].productId']").value(
+                .andExpect(jsonPath("$.errors['items[0].productId']").value(
                         "Идентификатор товара должен быть положительным"
                 ));
 
@@ -311,7 +311,7 @@ class OrderControllerTest {
                             }
                             """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['items[0].quantity']").value(
+                .andExpect(jsonPath("$.errors['items[0].quantity']").value(
                         "Количество товара обязательно"
                 ));
 
@@ -332,7 +332,7 @@ class OrderControllerTest {
                             }
                             """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['items[0].productId']").value(
+                .andExpect(jsonPath("$.errors['items[0].productId']").value(
                         "Идентификатор товара обязателен"
                 ));
 
