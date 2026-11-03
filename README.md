@@ -1,81 +1,86 @@
 # Inventory API
 
-Учебный REST API для управления товарами, остатками и заказами.
+A simple REST API for products, stock, and orders.
 
-## Возможности
+## What the application can do
 
-- Создание, просмотр, изменение и удаление товаров.
-- Оформление и просмотр заказов.
-- Проверка наличия товаров и списание остатков при оформлении заказа.
-- Расчёт стоимости заказа по ценам каталога.
-- Сохранение цены каждой позиции на момент оформления заказа.
-- Откат всей операции при недостатке товара.
-- Проверка входных данных и обработка ошибок.
+- Create, view, update, and delete products.
+- Create and view orders.
+- Check stock before creating an order.
+- Reduce stock after a successful order.
+- Calculate the order total.
+- Save the product price used in each order.
+- Cancel the whole order if there is not enough stock.
+- Check input data and return errors.
 
-## Технологии
+## Technologies
 
-- Java 17, Spring Boot 4.1.2.
-- Spring Web MVC, Spring Data JPA, Hibernate, Bean Validation.
-- PostgreSQL 18, Flyway.
-- JUnit, Mockito, интеграционные тесты.
-- Maven Wrapper, Docker, Docker Compose.
+- Java 17
+- Spring Boot 4.1.2
+- Spring Web MVC
+- Spring Data JPA and Hibernate
+- Bean Validation
+- PostgreSQL 18
+- Flyway
+- JUnit and Mockito
+- Maven Wrapper
+- Docker and Docker Compose
 
-## Запуск в Docker
+## Run the application with Docker
 
-Docker Compose запускает два сервиса:
+Docker Compose starts two services:
 
-- `app` — приложение, доступное по адресу http://127.0.0.1:8080.
-- `db` — PostgreSQL с отдельной базой `inventory_docker_db`.
+- `app` — the application: http://127.0.0.1:8080
+- `db` — PostgreSQL with the `inventory_docker_db` database
 
-Данные PostgreSQL сохраняются в именованном томе `postgres_data`.
-Порт базы не публикуется на компьютере.
-### Подготовка
+PostgreSQL data is saved in the `postgres_data` volume.
+The database port is not opened on the host computer.
 
-Нужны JDK 17 и запущенный Docker Desktop с Docker Compose.
-Переменная `JAVA_HOME` должна указывать на папку JDK.
+### Before you start
 
-Команды ниже предназначены для PowerShell. Выполняйте их из корня проекта.
+You need:
 
-1. Создайте локальный файл настроек:
+- JDK 17;
+- Docker Desktop with Docker Compose;
+- `JAVA_HOME` set to your JDK folder.
+
+Run these PowerShell commands from the project root.
+
+1. Create the `.env` file:
 
    ```powershell
    Copy-Item .env.example .env
-   ```
 
-   Если `.env` уже существует, используйте его без перезаписи.
+ If `.env` already exists, keep it.
 
-2. В файле `.env` задайте пароль PostgreSQL:
+2. Open `.env` and set the database password:
 
-   ```dotenv
-   DOCKER_DB_PASSWORD='your_password_here'
-   ```
+```dotenv
+DOCKER_DB_PASSWORD='your_password_here'
+```
+Use the same password every time you start the existing database.
+Changing `.env` does not change the password in an existing database.
+`.env` is not stored in Git. Do not share it.
 
-   При первом запуске этот пароль будет установлен для пользователя
-   `inventory`. При последующих запусках используйте тот же пароль:
-   изменение `.env` не меняет пароль в уже созданной базе.
+3. Build the JAR without running tests:
 
-   `.env` исключён из Git. Не публикуйте его содержимое.
+```powershell
+.\mvnw.cmd package -DskipTests
+```
 
-3. Соберите JAR приложения:
+This command builds the JAR without running tests. Therefore, local PostgreSQL and the `inventory_test_db` database are not required for the first Docker start.
 
-   ```powershell
-   .\mvnw.cmd package -DskipTests
-   ```
+4. Check the configuration and start the containers:
 
-   Эта команда собирает JAR без запуска тестов. Поэтому для первого запуска Docker не требуется локальная PostgreSQL и база inventory_test_db.
+```powershell
+docker compose config --quiet
+docker compose up -d --build
+```
 
-4. Проверьте конфигурацию и запустите контейнеры:
+The Dockerfile copies the JAR from `target`.
+After code changes, build the JAR again before rebuilding and starting Docker Compose.
 
-   ```powershell
-   docker compose config --quiet
-   docker compose up -d --build
-   ```
-
-   Dockerfile копирует готовый JAR из `target`.
-   После изменения кода сначала повторите сборку Maven,
-   затем сборку и запуск Docker Compose.
-
-### Проверка запуска
+### Check that the application is running
 
 ```powershell
 docker compose ps -a
@@ -83,118 +88,131 @@ docker compose logs --tail=100 app
 curl.exe -i http://127.0.0.1:8080/api/products
 ```
 
-При успешном запуске API возвращает HTTP 200.
-В новой базе список товаров пуст: `[]`.
+A successful request returns HTTP 200.
+On a new database, the product list is empty: `[]`.
 
-Flyway автоматически применяет миграции при запуске приложения.
+Flyway applies database migrations automatically when the application starts.
 
-### Остановка и повторный запуск
+### Stop and start again
 
 ```powershell
 docker compose down
 docker compose up -d
 ```
 
-Команда `down` без параметра `-v` сохраняет том с данными.
-Параметр `-v` удаляет том базы вместе с данными.
+The `down` command keeps the database volume and its data.
+The `-v` option removes the volume and all database data.
+## Product price migration (V2)
 
-## Миграция цены товара (V2)
+On a new database, Flyway runs all migrations automatically.
 
-На пустой базе миграции применяются автоматически.
+If the `products` table already contains products after V1, prepare the data before running V2:
 
-Если после V1 в таблице уже есть товары, перед применением V2 нужно:
-1. Остановить приложение и сделать резервную копию базы.
-2. Добавить столбец `price NUMERIC(12, 2)`, допускающий NULL.
-3. Заполнить цены существующих товаров по их ID из проверенного прайса.
-4. Убедиться, что у каждого товара указана положительная цена.
-5. Запустить приложение для применения миграций.
+1. Stop the application and make a database backup.
+2. Add the column `price NUMERIC(12, 2)` and allow `NULL` values.
+3. Add prices for all existing products using an approved price list.
+4. Make sure every product has a price greater than zero.
+5. Start the application to run the migration.
 
-V2 проверяет цены и устанавливает ограничение NOT NULL.
-Если цена отсутствует, равна нулю или отрицательна, миграция
-останавливается с понятным сообщением. Нужно подготовить цены
-и повторить запуск. Автоматические цены по умолчанию не подставляются.
+V2 checks the prices and then adds the `NOT NULL` rule.
+If a price is missing, zero, or negative, the migration stops with an error.
+Prepare the prices and run the migration again.
+The migration does not create default prices.
 
-### Базы, в которых исходная V2 уже применена
+### Databases where the old V2 was already applied
 
-В рамках этого учебного исправления файл V2 был изменён.
-Для ранее созданных баз это вызывает несовпадение контрольной суммы Flyway.
+The V2 file was changed during this project.
+For an existing database, Flyway will report a checksum mismatch.
 
-Перед разовым `repair` необходимо:
-- сделать резервную копию;
-- проверить, что `price` имеет тип NUMERIC(12, 2) и ограничение NOT NULL;
-- проверить отсутствие NULL и неположительных цен;
-- выполнить `validate` и убедиться, что расхождение касается только V2.
+Before running `repair` once:
 
-Затем выполняется `repair` с тем же набором файлов миграций
-и повторный `validate` для той же базы.
+- make a database backup;
+- check that `price` is `NUMERIC(12, 2)` and `NOT NULL`;
+- check that there are no `NULL` or non-positive prices;
+- run `validate` and make sure the mismatch is only for V2.
 
-`repair` обновляет историю Flyway, но не изменяет структуру таблиц
-и не заполняет цены. Он не запускается автоматически при старте приложения.
-Дальнейшие изменения схемы оформляются новыми миграциями.
+Then run `repair` with the same migration files and run `validate` again.
 
-Шесть тестов ProductPriceMigrationTest проверяют пустую базу,
-сохранение подготовленных данных, откат с повторным запуском,
-отказ при нулевой цене и ограничения целостности данных.
+`repair` updates the Flyway history. It does not change table data or structure, and it does not fill in product prices. It does not run automatically when the application starts.
 
-## Тесты
+Future database changes must use new migration files.
 
-Для тестов нужна локальная PostgreSQL на `localhost:5432`
-с отдельной базой `inventory_test_db` и пользователем `postgres`.
+Six `ProductPriceMigrationTest` tests check the empty database, prepared prices, rollback and retry, zero prices, and database constraints.
+## Tests
 
-Если базы ещё нет, создайте её в PostgreSQL:
+Local tests require PostgreSQL running on `localhost:5432`.
+
+Use a separate database named `inventory_test_db` and the `postgres` user.
+
+If the database does not exist, create it in PostgreSQL:
 
 ```sql
 CREATE DATABASE inventory_test_db;
 ```
 
-Используйте отдельную базу для тестов: интеграционные проверки изменяют данные.
+Integration tests change data, so do not use your main development database.
 
-В PowerShell задайте пароль локального пользователя `postgres`
-через скрытый ввод:
+In PowerShell, set the password for the local `postgres` user:
 
 ```powershell
 $env:DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Local PostgreSQL password' -AsSecureString)).Password
 ```
 
-Запустите тесты:
+Run the tests:
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-Или выполните сборку JAR с тестами:
+Or build the JAR and run the tests:
 
 ```powershell
 .\mvnw.cmd package
 ```
 
-`DB_PASSWORD` действует в текущем терминале.
-Файл `.env` используется Docker Compose и не загружается Maven автоматически.
-`DOCKER_DB_PASSWORD` задаёт пароль отдельной базы в Docker.
+`DB_PASSWORD` is available only in the current terminal.
+The `.env` file is used by Docker Compose and is not loaded by Maven.
+`DOCKER_DB_PASSWORD` is used only for the Docker database.
 
-## Документация API — Swagger UI и OpenAPI
+## Product validation and error responses
 
-После запуска приложения доступны:
+Product names must not be blank and can contain up to 255 characters.
+The stock quantity must be zero or greater.
+The product price must be greater than zero and have no more than two decimal places.
+
+The application checks product data before saving it. The database also enforces rules for non-blank names, non-negative stock, and positive prices.
+
+Validation errors return HTTP 400 with a `message` field and an `errors` object. The `errors` object contains messages for invalid fields.
+Other handled API errors return a JSON response with a `message` field.
+
+`ProductControllerTest` has four tests. They check that product creation and updates accept names with 255 characters and reject names with 256 characters.
+
+## API documentation — Swagger UI and OpenAPI
+
+After the application starts, you can open:
 
 - Swagger UI: http://localhost:8080/swagger-ui/index.html
-- OpenAPI в формате JSON: http://localhost:8080/v3/api-docs
+- OpenAPI JSON: http://localhost:8080/v3/api-docs
 
-Swagger UI содержит описания операций с товарами и заказами,
-параметров, моделей данных и кодов ответов.
+Swagger UI describes the product and order operations, request fields, response models, and status codes.
 
-Чтобы выполнить запрос, раскрой операцию, нажми Try it out,
-заполни параметры или тело запроса и нажми Execute.
-Фактический ответ приложения отображается в Server response.
-Example Value показывает пример из документации.
+To send a request:
 
-Запросы POST, PUT и DELETE изменяют данные подключённой базы.
-Повторный POST может создать ещё один товар или заказ.
+1. Open an operation.
+2. Click `Try it out`.
+3. Enter the request data.
+4. Click `Execute`.
 
-## Пример работы с API
+The real response appears under `Server response`.
+`Example Value` shows an example only.
 
-Команды выполняются в PowerShell при запущенном приложении.
+POST, PUT, and DELETE requests change data in the connected database.
+Sending the same POST request again can create another product or order.
+## API example
 
-### Создать товар
+Run these PowerShell commands while the application is running.
+
+### Create a product
 
 ```powershell
 $productBody = @{ name = 'Demo product'; quantity = 10; price = 125.50 } | ConvertTo-Json
@@ -202,10 +220,9 @@ $product = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8080/api/produc
 $product
 ```
 
-### Оформить заказ
+### Create an order
 
-Используем идентификатор созданного товара.
-Цену приложение берёт из каталога.
+The application takes the price from the product catalog.
 
 ```powershell
 $orderBody = @{ items = @(@{ productId = $product.id; quantity = 2 }) } | ConvertTo-Json -Depth 5
@@ -213,40 +230,46 @@ $order = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8080/api/orders' 
 $order | ConvertTo-Json -Depth 5
 ```
 
-Ожидаемая сумма заказа — 251.00.
-Остаток созданного товара уменьшится с 10 до 8.
+The expected order total is `251.00`.
+The product quantity decreases from 10 to 8.
 
-### Прочитать заказ и список товаров
+### Read the order and products
 
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:8080/api/orders/$($order.id)" | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Uri 'http://127.0.0.1:8080/api/products' | ConvertTo-Json -Depth 5
 ```
 
-Повторный POST создаёт новый товар или заказ.
-## Проверка зависимостей
+Sending the same POST request again creates another product or order.
+## Dependency check
 
-30.10.2026 устранено подключение тестовой зависимости `json-smart`,
-для которой IntelliJ сообщал о CVE-2026-113602.
+The test dependency `json-smart` was removed after IntelliJ reported a security warning.
 
-- `json-smart` исключён из тестовых стартеров Spring Boot.
-- Дерево Maven подтверждает отсутствие `json-smart` и `accessors-smart`.
-- JsonPath обновлён до версии 3.0.0.
-- Проверки JSON в тестах контроллера используют Jackson 3.
-- После изменений все 20 тестов прошли без ошибок и пропусков.
-- Команда `.\mvnw.cmd clean package` завершилась с `BUILD SUCCESS`.
+The following changes were made:
 
-После обновления Maven-проекта предупреждение IntelliJ исчезло.
-Эта проверка подтверждает устранение указанной зависимости,
-но не заменяет полный аудит безопасности проекта.
+- removed `json-smart` and `accessors-smart` from the test dependency tree;
+- updated JsonPath to version 3.0.0;
+- changed JSON checks in controller tests to use Jackson 3;
+- verified that Maven no longer includes the removed dependencies.
 
-## Автоматическая проверка (CI)
+All 30 tests passed after these changes.
 
-GitHub Actions запускает проверку при отправке изменений (`push`)
-и при открытии или обновлении Pull Request (`pull_request`).
+This check confirms that the reported dependency was removed. It is not a complete security audit.
 
-Проверка выполняется на Ubuntu 24.04 с Java 17:
-- запускается отдельная PostgreSQL 18 с базой `inventory_test_db`;
-- выполняются тесты и сборка JAR командой `./mvnw --batch-mode --no-transfer-progress clean package`.
+## Automatic checks (CI)
 
-Результаты и журналы доступны на вкладке Actions репозитория.
+GitHub Actions runs checks when code is pushed and when a Pull Request is opened or updated.
+
+The check runs on Ubuntu 24.04 with Java 17 and:
+
+- starts a separate PostgreSQL 18 database named `inventory_test_db`;
+- runs all tests;
+- builds the application JAR with Maven.
+
+The command used by CI is:
+
+```text
+./mvnw --batch-mode --no-transfer-progress clean package
+```
+
+The results and logs are available on the repository's `Actions` page.
