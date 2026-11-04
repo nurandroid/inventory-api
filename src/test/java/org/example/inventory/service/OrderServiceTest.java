@@ -42,7 +42,7 @@ class OrderServiceTest {
 
     @Test
     void create_shouldCalculateTotalAndDecreaseStock() {
-        // Подготовка
+        // Setup
         Product product = new Product(1L, "Клавиатура", 10);
         product.setPrice(new BigDecimal("12.50"));
 
@@ -56,10 +56,10 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Действие
+        // Action
         OrderResponse response = orderService.create(request);
 
-        // Проверка
+        // Check the result
         assertEquals(new BigDecimal("25.00"), response.totalAmount());
         assertEquals(8, product.getQuantity());
         assertEquals(1, response.items().size());
@@ -69,7 +69,7 @@ class OrderServiceTest {
 
     @Test
     void create_shouldThrowWhenProductNotFound() {
-        // Подготовка
+        // Setup
         CreateOrderRequest request = new CreateOrderRequest(
                 List.of(new OrderItemRequest(99L, 2))
         );
@@ -77,18 +77,19 @@ class OrderServiceTest {
         when(productRepository.findByIdForUpdate(99L))
                 .thenReturn(Optional.empty());
 
-        // Действие и проверка исключения
+        // Action: call the service and check the exception
         assertThrows(
                 ProductNotFoundException.class,
                 () -> orderService.create(request)
         );
 
-        // Проверка отсутствия сохранения
+        // Check that nothing was saved
         verifyNoInteractions(orderRepository);
     }
+
     @Test
     void create_shouldThrowWhenStockIsInsufficient() {
-        // Подготовка: есть 1 единица, заказываем 2
+        // Setup: one unit is in stock, but the order asks for two
         Product product = new Product(1L, "Клавиатура", 1);
         product.setPrice(new BigDecimal("12.50"));
 
@@ -99,20 +100,20 @@ class OrderServiceTest {
         when(productRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(product));
 
-        // Действие и проверка исключения
+        // Action: call the service and check the exception
         assertThrows(
                 InsufficientStockException.class,
                 () -> orderService.create(request)
         );
 
-        // Остаток не изменился, заказ не сохранялся
+        // Check that the stock was not changed and the order was not saved
         assertEquals(1, product.getQuantity());
         verifyNoInteractions(orderRepository);
     }
 
     @Test
     void create_shouldSumMultipleItemsAndDecreaseBothStocks() {
-        // Подготовка
+        // Setup
         Product keyboard = new Product(1L, "Клавиатура", 10);
         keyboard.setPrice(new BigDecimal("12.50"));
 
@@ -135,10 +136,10 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Действие
+        // Action
         OrderResponse response = orderService.create(request);
 
-        // Проверка
+        // Check the result
         assertEquals(new BigDecimal("46.90"), response.totalAmount());
         assertEquals(2, response.items().size());
         assertEquals(8, keyboard.getQuantity());

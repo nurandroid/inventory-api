@@ -106,7 +106,7 @@ class OrderControllerTest {
 
     @Test
     void create_shouldReturn201WithCreatedOrder() throws Exception {
-        // Подготовка
+        // Setup
         CreateOrderRequest request = new CreateOrderRequest(
                 List.of(new OrderItemRequest(1L, 2))
         );
@@ -126,7 +126,7 @@ class OrderControllerTest {
 
         when(orderService.create(request)).thenReturn(response);
 
-        // Действие и проверка HTTP-ответа
+        // Send the request and check the HTTP response
         mockMvc.perform(post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -160,7 +160,7 @@ class OrderControllerTest {
 
     @Test
     void create_shouldReturn404WhenProductNotFound() throws Exception {
-        // Подготовка
+        // Setup
         CreateOrderRequest request = new CreateOrderRequest(
                 List.of(new OrderItemRequest(99L, 2))
         );
@@ -168,7 +168,7 @@ class OrderControllerTest {
         when(orderService.create(request))
                 .thenThrow(new ProductNotFoundException(99L));
 
-        // Действие и проверка ответа
+        // Send the request and check the response
         mockMvc.perform(post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -191,7 +191,7 @@ class OrderControllerTest {
 
     @Test
     void create_shouldReturn409WhenStockIsInsufficient() throws Exception {
-        // Подготовка
+        // Setup
         CreateOrderRequest request = new CreateOrderRequest(
                 List.of(new OrderItemRequest(1L, 2))
         );
@@ -199,7 +199,7 @@ class OrderControllerTest {
         when(orderService.create(request))
                 .thenThrow(new InsufficientStockException(1L, 2, 1));
 
-        // Действие и проверка ответа
+        // Send the request and check the response
         mockMvc.perform(post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -222,7 +222,7 @@ class OrderControllerTest {
 
     @Test
     void findById_shouldReturn200WithOrder() throws Exception {
-        // Подготовка
+        // Setup
         OrderResponse response = new OrderResponse(
                 10L,
                 Instant.parse("2026-10-30T08:00:00Z"),
@@ -238,7 +238,7 @@ class OrderControllerTest {
 
         when(orderService.findById(10L)).thenReturn(response);
 
-        // Действие и проверка ответа
+        // Send the request and check the response
         mockMvc.perform(get("/api/orders/{id}", 10L))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(
@@ -261,11 +261,11 @@ class OrderControllerTest {
 
     @Test
     void findById_shouldReturn404WhenOrderNotFound() throws Exception {
-        // Подготовка
+        // Setup
         when(orderService.findById(99L))
                 .thenThrow(new OrderNotFoundException(99L));
 
-        // Действие и проверка ответа
+        // Send the request and check the response
         mockMvc.perform(get("/api/orders/{id}", 99L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(

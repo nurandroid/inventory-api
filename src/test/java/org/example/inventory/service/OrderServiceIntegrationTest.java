@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 
-
 @SpringBootTest
 @ActiveProfiles("test")
 class OrderServiceIntegrationTest {
@@ -52,7 +51,7 @@ class OrderServiceIntegrationTest {
 
     @BeforeEach
     void prepareDatabase() throws SQLException {
-        // Проверяем базу до удаления данных
+        // Check the database before deleting test data
         try (Connection connection = dataSource.getConnection()) {
             assertEquals("inventory_test_db", connection.getCatalog());
         }
@@ -63,7 +62,7 @@ class OrderServiceIntegrationTest {
 
     @Test
     void create_shouldPersistOrderAndDecreaseStock() {
-        // Подготовка
+        // Setup
         Product product = new Product();
         product.setName("Клавиатура");
         product.setQuantity(10);
@@ -75,17 +74,17 @@ class OrderServiceIntegrationTest {
                 List.of(new OrderItemRequest(savedProduct.getId(), 2))
         );
 
-        // Действие: транзакция сервиса завершается при возврате
+        // Action: the service transaction completes when the method returns
         OrderResponse created = orderService.create(request);
 
-        // Повторное чтение из PostgreSQL
+        // Read the data from PostgreSQL again
         Product reloadedProduct = productRepository
                 .findById(savedProduct.getId())
                 .orElseThrow();
 
         OrderResponse reloadedOrder = orderService.findById(created.id());
 
-        // Проверка
+        // Check the result
         assertNotNull(created.id());
         assertNotNull(reloadedOrder.createdAt());
         assertEquals(8, reloadedProduct.getQuantity());
@@ -96,8 +95,8 @@ class OrderServiceIntegrationTest {
 
     @Test
     void create_shouldRollbackWhenSecondProductHasInsufficientStock() {
-        // Подготовка: первый товар сохраняем раньше второго,
-        // чтобы его id был меньше и сервис обработал его первым
+        // Setup: save the first product before the second,
+        // so it gets a lower ID and the service processes it first
         Product keyboard = new Product();
         keyboard.setName("Клавиатура");
         keyboard.setQuantity(10);
@@ -117,13 +116,13 @@ class OrderServiceIntegrationTest {
                 )
         );
 
-        // Действие: второй товар вызывает отказ и откат транзакции
+        // Action: the second product causes an error and rolls back the transaction
         assertThrows(
                 InsufficientStockException.class,
                 () -> orderService.create(request)
         );
 
-        // Повторное чтение после отката
+        // Read the data again after the rollback
         Product reloadedKeyboard = productRepository
                 .findById(savedKeyboard.getId())
                 .orElseThrow();
@@ -139,7 +138,7 @@ class OrderServiceIntegrationTest {
 
     @Test
     void create_shouldAllowOnlyOneOrderForLastUnit() throws Exception {
-        // Подготовка: последняя единица товара
+        // Setup: only one unit of the product remains
         Product product = new Product();
         product.setName("Клавиатура");
         product.setQuantity(1);
@@ -182,7 +181,7 @@ class OrderServiceIntegrationTest {
                     "Оба потока должны подготовиться к запуску"
             );
 
-            // Разрешаем обоим потокам вызвать сервис
+            // Allow both threads to call the service
             start.countDown();
 
             boolean firstSucceeded = first.get(10, TimeUnit.SECONDS);
