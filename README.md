@@ -38,20 +38,16 @@ The database port is not opened on the host computer.
 
 ### Before you start
 
-You need:
-
-- JDK 17;
-- Docker Desktop with Docker Compose;
-- `JAVA_HOME` set to your JDK folder.
+You need Docker Desktop with Docker Compose. The Docker build uses Java 17 and the Maven Wrapper included in the project.
 
 Run these PowerShell commands from the project root.
 
-1. Create the `.env` file:
+1. Create the `.env` file if it does not exist:
 
    ```powershell
    Copy-Item .env.example .env
 
- If `.env` already exists, keep it.
+   If `.env` already exists, keep it.
 
 2. Open `.env` and set the database password:
 
@@ -62,23 +58,14 @@ Use the same password every time you start the existing database.
 Changing `.env` does not change the password in an existing database.
 `.env` is not stored in Git. Do not share it.
 
-3. Build the JAR without running tests:
-
-```powershell
-.\mvnw.cmd package -DskipTests
-```
-
-This command builds the JAR without running tests. Therefore, local PostgreSQL and the `inventory_test_db` database are not required for the first Docker start.
-
-4. Check the configuration and start the containers:
+3. Check the configuration and build and start the containers:
 
 ```powershell
 docker compose config --quiet
 docker compose up -d --build
 ```
 
-The Dockerfile copies the JAR from `target`.
-After code changes, build the JAR again before rebuilding and starting Docker Compose.
+Docker Compose builds the JAR with the project Maven Wrapper and Java 17. Tests are skipped, so local PostgreSQL and the `inventory_test_db` database are not required for the first Docker start. After code changes, run `docker compose up -d --build` again to rebuild and start the updated application.
 
 ### Check that the application is running
 
